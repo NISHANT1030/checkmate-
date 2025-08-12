@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Chess Game</title>
+  <style>
+    body { font-family: Arial; }
+    #chessboard { border: 2px solid #333; display: grid; grid-template: repeat(8, 60px) / repeat(8, 60px); margin: 20px auto; width: 480px; }
+    .cell { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2em; cursor: pointer; }
+    .white { background: #eee; }
+    .black { background: #666; color: #eee; }
+    .selected { outline: 3px solid orange; }
+  </style>
+</head>
+<body>
+  <h2>Simple Chess Game</h2>
+  <div id="chessboard"></div>
+  <script>
+    // Unicode for pieces: https://en.wikipedia.org/wiki/Chess_symbols_in_Unicode
+    const initialBoard = [
+      ['♜','♞','♝','♛','♚','♝','♞','♜'],
+      ['♟','♟','♟','♟','♟','♟','♟','♟'],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['','','','','','','',''],
+      ['♙','♙','♙','♙','♙','♙','♙','♙'],
+      ['♖','♘','♗','♕','♔','♗','♘','♖'],
+    ];
+
+    let board = JSON.parse(JSON.stringify(initialBoard));
+    let selected = null;
+    let turn = 'white'; // 'white' or 'black'
+    const pieceColor = piece => (['♔','♕','♖','♗','♘','♙'].includes(piece) ? 'white' : piece ? 'black' : null);
+
+    function drawBoard() {
+      const boardDiv = document.getElementById('chessboard');
+      boardDiv.innerHTML = '';
+      for(let r=0; r<8; r++) {
+        for(let c=0; c<8; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell ' + ((r+c)%2==0 ? 'white' : 'black');
+          cell.dataset.r = r; cell.dataset.c = c;
+          cell.innerHTML = board[r][c];
+          if(selected && selected[0]==r && selected[1]==c) cell.classList.add('selected');
+          cell.onclick = cellClick;
+          boardDiv.appendChild(cell);
+        }
+      }
+    }
+
+    function cellClick(e) {
+      const r = parseInt(this.dataset.r), c = parseInt(this.dataset.c);
+      const piece = board[r][c];
+      if(selected) {
+        // move attempt
+        if(tryMove(selected[0], selected[1], r, c)) {
+          board[r][c] = board[selected[0]][selected[1]];
+          board[selected[0]][selected[1]] = '';
+          turn = (turn==='white' ? 'black' : 'white');
+        }
+        selected = null;
+      } else if (piece && pieceColor(piece) === turn) {
+        selected = [r, c];
+      }
+      drawBoard();
+    }
+
+    // Simplified, only basic move legality (no check/checkmate, no special moves)
+    function tryMove(sr, sc, tr, tc) {
+      if(sr===tr && sc===tc) return false;
+      const piece = board[sr][sc];
+      const target = board[tr][tc];
+      if(pieceColor(piece)===pieceColor(target)) return false;
+
+      // Pawn
+      const dir = (piece==='♙') ? -1 : (piece==='♟') ? 1 : 0;
+      if(['♙','♟'].includes(piece)) {
+        if(sc===tc && !target) { // forward
+          if(tr===sr+dir) return true;
+          if((sr===6&&piece==='♙' || sr===1&&piece==='♟')&&tr===sr+2*dir&&!board[sr+dir][sc]&&!target) return true;
+        } else if(Math.abs(sc-tc)===1&&tr===sr+dir&&target) return true; // capture
+        return false;
+      }
+      // Knight
+      if(['♘','♞'].includes(piece)) {
+        return (Math.abs(sr-tr)===2&&Math.abs(sc-tc)===1)||(Math.abs(sr-tr)===1&&Math.abs(sc-tc)===2);
+      }
+      // Bishop
+      if(['♗','♝'].includes(piece)) {
+        if(Math.abs(sr-tr)!==Math.abs(sc-tc)) return false;
+        return pathClear(sr, sc, tr, tc);
+      }
+      // Rook
+      if(['♖','♜'].includes(piece)) {
+        if(sr!==tr&&sc!==tc) return false;
+        return pathClear(sr, sc, tr, tc);
+      }
+      // Queen
+      if(['♕','♛'].includes(piece)) {
+        if(sr===tr||sc===tc||Math.abs(sr-tr)===Math.abs(sc-tc)) return pathClear(sr, sc, tr, tc);
+        return false;
+      }
+      // King
+      if(['♔','♚'].includes(piece)) {
+        return Math.max(Math.abs(sr-tr),Math.abs(sc-tc))===1;
+      }
+      return false;
+    }
+
+    function pathClear(sr, sc, tr, tc) {
+      const dr = Math.sign(tr-sr), dc = Math.sign(tc-sc);
+      let r=sr+dr, c=sc+dc;
+      while(r!==tr||c!==tc) {
+        if(board[r][c]) return false;
+        r+=dr; c+=dc;
+      }
+      return true;
+    }
+
+    drawBoard();
+  </script>
+</body>
+</html>
