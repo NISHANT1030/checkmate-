@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cricket Tap Game</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        background-color: #4CAF50;
+        color: white;
+        font-family: Arial, sans-serif;
+        user-select: none;
+    }
+    #gameCanvas {
+        background-color: #87CEEB;
+        display: block;
+        margin: auto;
+        border: 2px solid white;
+        touch-action: none;
+    }
+    #score { font-size: 24px; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>🏏 Cricket Tap Game</h1>
+<canvas id="gameCanvas" width="500" height="1000"></canvas>
+<div id="score">Score: 0</div>
+
+<script>
+// Canvas setup
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let score = 0;
+
+let bat = { x: 130, y: 350, width: 40, height: 80 };
+let ball = { x: Math.random() * 280, y: 0, radius: 10, speed: 3 };
+
+// Draw bat
+function drawBat() {
+    ctx.fillStyle = "#8B4513";
+    ctx.fillRect(bat.x, bat.y, bat.width, bat.height);
+}
+
+// Draw ball
+function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+    ctx.stroke();
+}
+
+// Update game
+function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBat();
+    drawBall();
+
+    // Ball movement
+    ball.y += ball.speed;
+
+    // Check collision
+    if (
+        ball.y + ball.radius >= bat.y &&
+        ball.x >= bat.x &&
+        ball.x <= bat.x + bat.width
+    ) {
+        score++;
+        document.getElementById("score").innerText = "Score: " + score;
+        resetBall();
+    }
+
+    // Missed ball
+    if (ball.y > canvas.height) {
+        alert("Game Over! Your score: " + score);
+        score = 0;
+        document.getElementById("score").innerText = "Score: " + score;
+        resetBall();
+    }
+
+    requestAnimationFrame(update);
+}
+
+// Reset ball to top
+function resetBall() {
+    ball.x = Math.random() * (canvas.width - ball.radius);
+    ball.y = 0;
+    ball.speed = 2 + Math.random() * 3;
+}
+
+// Mobile / mouse controls
+canvas.addEventListener("touchmove", function(e) {
+    let touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+    bat.x = touchX - bat.width / 2;
+});
+canvas.addEventListener("mousemove", function(e) {
+    let mouseX = e.clientX - canvas.getBoundingClientRect().left;
+    bat.x = mouseX - bat.width / 2;
+});
+
+update();
+</script>
+
+</body>
+</html>
